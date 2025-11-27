@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCS OneCheck</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #061225; } /* Deeper Dark Blue Background */
+        
+        /* Define Dark Theme Colors */
+        .card-bg { background-color: #1a273b; color: #f5f5f5; } /* Slightly Lighter Dark Card Background */
+        .text-primary { color: #f5b041; } /* Golden Color for highlights */
+        .text-secondary { color: #c0c0c0; } /* Light Gray for secondary text */
+        
+        /* Risk Colors for Dark Theme */
+        .risk-low { background-color: #1b4d3e; color: #6ee7b7; border-left: 4px solid #34d399; } /* Greenish/Teal */
+        .risk-medium { background-color: #58411b; color: #f5d0a9; border-left: 4px solid #f59e0b; } /* Amber/Gold */
+        .risk-high { background-color: #631c1c; color: #fecaca; border-left: 4px solid #f87171; } /* Reddish */
+        
+        .platform-card { transition: all 0.3s ease; }
+        .platform-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3), 0 4px 6px -2px rgba(0,0,0,0.1); }
+
+        /* Custom spinner for loading */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #f5b041; /* Golden spinner */
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Input and Textarea Styles */
+        .dark-input {
+            background-color: #061225; /* Updated to deeper body background */
+            border-color: #3b4d6b;
+            color: #f5f5f5;
+        }
+        .dark-input:focus {
+            border-color: #f5b041;
+            box-shadow: 0 0 0 1px #f5b041;
+        }
+
+        /* CUSTOM STYLE FOR HIGHLIGHTED VIOLATION BOX - CHANGED TO DARK BLUE */
+        .violation-highlight-box {
+            /* Changed from Amber/Brown to Darker Navy Blue */
+            border: 1px solid #1a273b; /* Card Border */
+            background-color: #061225; /* Deep Body Background Color */
+            color: #f5f5f5;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+        
+        /* CUSTOM STYLE FOR HIGHLIGHTED VIOLATION TEXT */
+        .violation-highlight-text {
+            color: #f87171; /* Text color remains light red for violation */
+            font-weight: 600;
+            /* Highlight background changed from amber-800 to a slightly darker blue/red for contrast */
+            background-color: #440a0a; 
+            border-radius: 0.25rem;
+            padding: 0 0.25rem;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto card-bg shadow-2xl rounded-2xl p-6 md:p-10">
+        <div class="flex items-center mb-6 border-b border-gray-700 pb-2">
+            
+            <h1 class="text-3xl font-bold text-white">SCS OneCheck 🛡️</h1>
+        </div>
+        <p class="text-secondary mb-8">Enter your content details below for a complete policy audit across Facebook, TikTok, and YouTube.</p>
+
+        <!-- Input Form -->
+        <div id="input-form" class="space-y-6">
+
+            <!-- CAPTION/CONTENT COPY (Moved to the top) -->
+            <div>
+                <label for="caption" class="block text-sm font-medium text-secondary mb-1">Caption/Content Copy</label>
+                <textarea id="caption" rows="2" class="w-full p-3 border rounded-lg focus:ring-primary focus:border-primary dark-input" placeholder="Paste your ad copy, caption, or URL content here."></textarea>
+            </div>
+
+            <!-- VISUAL/DESIGN DESCRIPTION (Moved below and asterisk removed) -->
+            <div>
+                <label for="visual-description" class="block text-sm font-medium text-secondary mb-1">Visual/Design Description</label>
+                <textarea id="visual-description" rows="3" class="w-full p-3 border rounded-lg focus:ring-primary focus:border-primary dark-input" placeholder="Describe the design or visual content here. E.g., 'A person smiling and pointing to a graph showing 300% increase,' or 'Animated video explaining debt consolidation.'"></textarea>
+                <p class="text-xs text-gray-500 mt-1">This detail is crucial for assessing visual policy risks (e.g., 'Before-After', 'Adult/Suggestive').</p>
+            </div>
+            
+            <!-- FACEBOOK DATA FEED (Updated Input for Links) -->
+            <div>
+                <label for="facebook-link-input" class="block text-sm font-medium text-secondary mb-1">Facebook Data Feed (Optional) - Enter Link and Press Enter to Save</label>
+                <!-- Added min-h-[150px] for better visual space for tags -->
+                <div id="facebook-links-container" class="border rounded-lg p-3 focus-within:ring-primary focus-within:border-primary min-h-[150px] dark-input">
+                    <!-- Saved links will go here -->
+                    <div id="facebook-saved-links" class="flex flex-wrap gap-2 mb-2"></div>
+                    <input type="text" id="facebook-link-input" class="w-full border-none p-0 focus:ring-0 focus:outline-none dark-input" placeholder="Enter product URL or landing page link...">
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Product URLs or landing page links, primarily used for verifying consistency with ad content and policy compliance.</p>
+            </div>
+            
+            <!-- TIKTOK DATA FEED (New Input - Converted to Tag Input) -->
+            <div>
+                <label for="tiktok-link-input" class="block text-sm font-medium text-secondary mb-1">TikTok Data Feed (Optional) - Enter Link or Data and Press Enter to Save</label>
+                <!-- Added min-h-[150px] for better visual space for tags -->
+                <div id="tiktok-links-container" class="border rounded-lg p-3 focus-within:ring-fuchsia-500 focus-within:border-fuchsia-500 min-h-[150px] dark-input">
+                    <!-- Saved links/data will go here -->
+                    <div id="tiktok-saved-links" class="flex flex-wrap gap-2 mb-2"></div>
+                    <input type="text" id="tiktok-link-input" class="w-full border-none p-0 focus:ring-0 focus:outline-none dark-input" placeholder="Enter link or structured data item...">
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Product URLs, structured data, or other data items used for TikTok e-commerce and content compliance audit.</p>
+            </div>
+
+
+            <div class="flex flex-col sm:flex-row gap-6">
+                <div class="flex-1">
+                    <label for="content-type" class="block text-sm font-medium text-secondary mb-1">Content Type</label>
+                    <select id="content-type" class="w-full p-3 border rounded-lg focus:ring-primary focus:border-primary bg-transparent dark-input">
+                        <option value="" selected disabled class="bg-gray-700">Select Content Type</option>
+                        <option value="Real Estate" class="bg-gray-700">Real Estate</option>
+                        <option value="Travels and Tour" class="bg-gray-700">Travels and Tour</option>
+                        <option value="Education" class="bg-gray-700">Education</option>
+                        <option value="Business & Consultation" class="bg-gray-700">Business & Consultation</option>
+                        <option value="Visa Service" class="bg-gray-700">Visa Service</option>
+                        <option value="Gems & Jewellery" class="bg-gray-700">Gems & Jewellery</option>
+                        <option value="Apartment Rental" class="bg-gray-700">Apartment Rental</option>
+                        <option value="Digital Marketing" class="bg-gray-700">Digital Marketing</option>
+                    </select>
+                </div>
+                <!-- Content Intent box removed -->
+            </div>
+
+            <!-- Platform Selection -->
+            <div class="pt-2 border-t border-gray-700">
+                <label class="block text-sm font-medium text-secondary mb-2">Select Platform(s) to Check</label>
+                <div id="platform-selection" class="flex flex-wrap gap-4 p-3 border rounded-lg dark-input">
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="platform" value="facebook" class="form-checkbox h-4 w-4 text-primary rounded focus:ring-primary bg-gray-700 border-gray-600">
+                        <span class="ml-2 text-secondary font-semibold">Facebook</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="platform" value="tiktok" class="form-checkbox h-4 w-4 text-primary rounded focus:ring-primary bg-gray-700 border-gray-600">
+                        <span class="ml-2 text-secondary font-semibold">TikTok</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="platform" value="youtube" class="form-checkbox h-4 w-4 text-primary rounded focus:ring-primary bg-gray-700 border-gray-600">
+                        <span class="ml-2 text-secondary font-semibold">YouTube</span>
+                    </label>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Check Now Button (Increased vertical margin for prominence) -->
+        <div class="mt-10">
+            <button id="analyze-button" class="w-full py-4 px-4 bg-primary text-white font-extrabold text-lg rounded-xl hover:bg-amber-500 transition duration-150 flex justify-center items-center shadow-lg hover:shadow-xl">
+                <span id="button-text">Check Now</span>
+                <div id="loading-spinner" class="spinner hidden ml-3"></div>
+            </button>
+        </div>
+
+        <!-- Output Display Area -->
+        <div id="results-output" class="hidden mt-10 space-y-8 p-4 bg-gray-900 rounded-xl border border-gray-700">
+            <h2 class="text-2xl font-bold text-primary border-b border-gray-700 pb-3">Compliance Audit Report</h1>
+            <!-- Results will be injected here -->
+        </div>
+
+        <div id="error-message" class="hidden mt-4 text-red-400 p-3 bg-red-900 rounded-lg border border-red-700"></div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // setLogLevel('debug'); // Uncomment for debugging
+        
+        const VISUAL_DESCRIPTION = document.getElementById('visual-description');
+        const CAPTION = document.getElementById('caption');
+        
+        // Facebook Data Feed Elements
+        const FACEBOOK_LINK_INPUT = document.getElementById('facebook-link-input');
+        const FACEBOOK_SAVED_LINKS = document.getElementById('facebook-saved-links');
+        
+        // TikTok Data Feed Elements
+        const TIKTOK_LINK_INPUT = document.getElementById('tiktok-link-input');
+        const TIKTOK_SAVED_LINKS = document.getElementById('tiktok-saved-links');
+        
+        const CONTENT_TYPE = document.getElementById('content-type');
+        const PLATFORM_SELECTION = document.getElementById('platform-selection');
+        const ANALYZE_BUTTON = document.getElementById('analyze-button');
+        const BUTTON_TEXT = document.getElementById('button-text');
+        const LOADING_SPINNER = document.getElementById('loading-spinner');
+        const RESULTS_OUTPUT = document.getElementById('results-output');
+        const ERROR_MESSAGE = document.getElementById('error-message');
+
+        const apiKey = ""; // API Key is automatically provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth, userId = null;
+        let isAuthReady = false;
+
+        // Default essential policy links
+        const defaultFacebookLinks = [
+            'https://transparency.meta.com/policies/community-standards/',
+            'https://transparency.meta.com/policies/community-standards/violent-graphic-content/',
+            'https://transparency.meta.com/policies/community-standards/misinformation/',
+            'https://www.facebook.com/business/help/201148151829614?id=208060977200861'
+        ];
+        const defaultTiktokLinks = [
+            'https://support.tiktok.com/en/safety-hc/account-and-user-safety/content-violations-and-bans'
+        ];
+
+        let facebookLinksArray = [...defaultFacebookLinks];
+        let tiktokLinksArray = [...defaultTiktokLinks];
+
+        // Firestore Initialization and Authentication
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        loadSavedLinks();
+                    } else {
+                        // Use a fallback random ID if auth fails
+                        userId = crypto.randomUUID();
+                        isAuthReady = true;
+                        loadSavedLinks();
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase Initialization or Auth Error:", error);
+                // Fallback: Use random ID and proceed without persistence
+                userId = crypto.randomUUID();
+                isAuthReady = true;
+                // Render defaults if persistence fails
+                renderSavedLinks();
+                renderTikTokSavedLinks();
+            }
+        }
+
+        // --- FIRESTORE LINK PERSISTENCE ---
+        function getDocRef() {
+            if (!db || !userId) return null;
+            // Private data structure: /artifacts/{appId}/users/{userId}/datafeeds/{docId}
+            return doc(db, `artifacts/${appId}/users/${userId}/datafeeds`, 'complianceLinks');
+        }
+
+        async function loadSavedLinks() {
+            if (!isAuthReady || !db || !userId) return;
+
+            const docRef = getDocRef();
+            if (!docRef) return;
+
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    // Load and ensure default links are included
+                    facebookLinksArray = Array.from(new Set([...defaultFacebookLinks, ...(data.facebookLinks || [])]));
+                    tiktokLinksArray = Array.from(new Set([...defaultTiktokLinks, ...(data.tiktokLinks || [])]));
+                } else {
+                    // Save the defaults if the document doesn't exist
+                    saveLinks();
+                }
+                renderSavedLinks();
+                renderTikTokSavedLinks();
+            }, (error) => {
+                console.error("Error loading links:", error);
+                // Fallback to defaults on error
+                facebookLinksArray = [...defaultFacebookLinks];
+                tiktokLinksArray = [...defaultTiktokLinks];
+                renderSavedLinks();
+                renderTikTokSavedLinks();
+            });
+        }
+
+        async function saveLinks() {
+            if (!isAuthReady || !db || !userId) return;
+
+            const docRef = getDocRef();
+            if (!docRef) return;
+
+            try {
+                // Filter out the default links from the arrays before saving, only save user additions
+                const userFacebookLinks = facebookLinksArray.filter(link => !defaultFacebookLinks.includes(link));
+                const userTikTokLinks = tiktokLinksArray.filter(link => !defaultTiktokLinks.includes(link));
+
+                await setDoc(docRef, {
+                    facebookLinks: userFacebookLinks,
+                    tiktokLinks: userTikTokLinks,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+            } catch (error) {
+                console.error("Error saving links:", error);
+            }
+        }
+
+        // Helper function for exponential backoff (kept for API stability)
+        async function fetchWithRetry(url, options, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) {
+                        if (response.status === 429 && i < retries - 1) {
+                            const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue;
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response;
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                }
+            }
+        }
+
+        // Helper to validate URL (simple validation)
+        function isValidUrl(string) {
+            try {
+                const url = new URL(string);
+                return url.protocol === 'http:' || url.protocol === 'https:';
+            } catch (_) {
+                return false;  
+            }
+        }
+
+        // --- FACEBOOK LINK HANDLING ---
+        function renderSavedLinks() {
+            FACEBOOK_SAVED_LINKS.innerHTML = facebookLinksArray.map((link, index) => {
+                // Determine if it's a user-added link (not in default list)
+                const isDefault = defaultFacebookLinks.includes(link);
+                const tagClass = isDefault ? 'bg-gray-600 text-gray-200' : 'bg-sky-500 text-white';
+                const buttonColor = isDefault ? 'text-gray-400 hover:text-gray-200' : 'text-white hover:text-sky-100';
+                
+                return `
+                    <span class="inline-flex items-center px-3 py-1 text-sm font-medium ${tagClass} rounded-full" data-index="${index}" title="${link}">
+                        ${link.length > 30 ? link.substring(0, 30) + '...' : link}
+                        <button type="button" class="ml-2 -mr-1 h-4 w-4 ${buttonColor} focus:outline-none" onclick="removeLink(${index})" ${isDefault ? 'disabled title="Default Policy Link - Cannot Remove"' : ''}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.707a1 1 0 00-1.414-1.414L7 8.586 5.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-2.293 2.293a1 1 0 001.414 1.414L10 11.414l2.293 2.293a1 1 0 001.414-1.414L11.414 10l2.293-2.293a1 1 0 000-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </span>
+                `;
+            }).join('');
+            FACEBOOK_LINK_INPUT.focus();
+        }
+
+        function removeLink(index) {
+            // Only allow removal if it's not a default link
+            const linkToRemove = facebookLinksArray[index];
+            if (defaultFacebookLinks.includes(linkToRemove)) return;
+
+            facebookLinksArray.splice(index, 1);
+            saveLinks(); // Save changes to Firestore
+            renderSavedLinks();
+        }
+        window.removeLink = removeLink; 
+
+        function addLink(event) {
+            if (event.key === 'Enter' || event.keyCode === 13) {
+                event.preventDefault(); 
+                const link = FACEBOOK_LINK_INPUT.value.trim();
+                
+                if (link === '') return;
+                
+                if (!isValidUrl(link)) {
+                    // Use a custom message box instead of alert()
+                    showCustomMessage('Invalid URL entered. Please use a link starting with http:// or https://.', 'error');
+                    FACEBOOK_LINK_INPUT.value = '';
+                    return;
+                }
+
+                if (!facebookLinksArray.includes(link)) {
+                    facebookLinksArray.push(link);
+                    saveLinks(); // Save changes to Firestore
+                    FACEBOOK_LINK_INPUT.value = '';
+                    renderSavedLinks();
+                } else {
+                    showCustomMessage('This link has already been added.', 'info');
+                    FACEBOOK_LINK_INPUT.value = '';
+                }
+            }
+        }
+        
+        // --- TIKTOK LINK HANDLING ---
+        function renderTikTokSavedLinks() {
+            TIKTOK_SAVED_LINKS.innerHTML = tiktokLinksArray.map((data, index) => {
+                const isDefault = defaultTiktokLinks.includes(data);
+                const tagClass = isDefault ? 'bg-gray-600 text-gray-200' : 'bg-fuchsia-600 text-white';
+                const buttonColor = isDefault ? 'text-gray-400 hover:text-gray-200' : 'text-white hover:text-fuchsia-100';
+
+                return `
+                    <span class="inline-flex items-center px-3 py-1 text-sm font-medium ${tagClass} rounded-full" data-index="${index}" title="${data}">
+                        ${data.length > 30 ? data.substring(0, 30) + '...' : data}
+                        <button type="button" class="ml-2 -mr-1 h-4 w-4 ${buttonColor} focus:outline-none" onclick="removeTikTokLink(${index})" ${isDefault ? 'disabled title="Default Policy Link - Cannot Remove"' : ''}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.707a1 1 0 00-1.414-1.414L7 8.586 5.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-2.293 2.293a1 1 0 001.414 1.414L10 11.414l2.293 2.293a1 1 0 001.414-1.414L11.414 10l2.293-2.293a1 1 0 000-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </span>
+                `;
+            }).join('');
+            TIKTOK_LINK_INPUT.focus();
+        }
+
+        function removeTikTokLink(index) {
+            const dataToRemove = tiktokLinksArray[index];
+            if (defaultTiktokLinks.includes(dataToRemove)) return;
+            
+            tiktokLinksArray.splice(index, 1);
+            saveLinks(); // Save changes to Firestore
+            renderTikTokSavedLinks();
+        }
+        window.removeTikTokLink = removeTikTokLink; // Expose globally
+
+        function addTikTokLink(event) {
+            if (event.key === 'Enter' || event.keyCode === 13) {
+                event.preventDefault(); 
+                
+                const data = TIKTOK_LINK_INPUT.value.trim();
+                
+                if (data === '') return;
+                
+                if (!tiktokLinksArray.includes(data)) {
+                    tiktokLinksArray.push(data);
+                    saveLinks(); // Save changes to Firestore
+                    TIKTOK_LINK_INPUT.value = '';
+                    renderTikTokSavedLinks();
+                } else {
+                    showCustomMessage('This item has already been added.', 'info');
+                    TIKTOK_LINK_INPUT.value = '';
+                }
+            }
+        }
+        
+        // --- HIGHLIGHTING LOGIC ---
+        function processHighlightedCaption(markedText) {
+            if (!markedText || markedText.trim() === '[No caption provided]') return '<p class="text-gray-500 italic">No caption provided or content is fully compliant.</p>';
+
+            // Replace {{...}} with styled spans
+            const html = markedText.replace(/{{(.*?)}}/g, (match, p1) => {
+                // p1 is the content inside the braces
+                // Use the custom class for highlighting text
+                return `<span class="violation-highlight-text">${p1}</span>`;
+            });
+            
+            // Render the text using whitespace-pre-wrap to respect line breaks from the API response
+            // Use the custom class for the highlight box background
+            return `<div class="whitespace-pre-wrap leading-relaxed violation-highlight-box">${html}</div>`;
+        }
+
+
+        const JSON_SCHEMA = {
+            type: "OBJECT",
+            properties: {
+                classification: {
+                    type: "OBJECT",
+                    description: "Details about the content type and intent.",
+                    properties: {
+                        contentType: { type: "STRING", description: "What type of content is this? (e.g., Real Estate Promotion, DIY Tutorial, Financial Lead Gen)" },
+                        intent: { type: "STRING", description: "Is this intended for Ads/Paid or Organic posting?" }
+                    },
+                    required: ["contentType", "intent"]
+                },
+                platformSummary: {
+                    type: "OBJECT",
+                    description: "Summary of risk for each platform.",
+                    properties: {
+                        facebook: {
+                            type: "OBJECT",
+                            properties: { riskLevel: { type: "STRING", enum: ["Low", "Medium", "High"] }, riskScore: { type: "NUMBER", description: "Score 0-100" } }
+                        },
+                        tiktok: {
+                            type: "OBJECT",
+                            properties: { riskLevel: { type: "STRING", enum: ["Low", "Medium", "High"] }, riskScore: { type: "NUMBER", description: "Score 0-100" } }
+                        },
+                        youtube: {
+                            type: "OBJECT",
+                            properties: { riskLevel: { type: "STRING", enum: ["Low", "Medium", "High"] }, riskScore: { type: "NUMBER", description: "Score 0-100" } }
+                        }
+                    },
+                    required: ["facebook", "tiktok", "youtube"]
+                },
+                violations: {
+                    type: "ARRAY",
+                    description: "Detailed list of every possible issue found.",
+                    items: {
+                        type: "OBJECT",
+                        properties: {
+                            issue: { type: "STRING", description: "Specific violation name (e.g., 'Before–After promise', 'Financial income claim')" },
+                            platform: { type: "STRING", description: "Platform(s) most sensitive to this issue (e.g., 'Facebook, TikTok', 'All', 'YouTube')" },
+                            riskArea: { type: "STRING", description: "Policy area (e.g., Ad Policy, Community Guidelines, Sensitive Keywords, Brand Safety)" },
+                            actionableFix: {
+                                type: "OBJECT",
+                                properties: {
+                                    remove: { type: "STRING", description: "What specifically to remove." },
+                                    rewrite: { type: "STRING", description: "What specifically to rewrite." },
+                                    saferWording: { type: "STRING", description: "Safer alternative wording." },
+                                    saferVisuals: { type: "STRING", description: "Safer visual recommendations." }
+                                },
+                                required: ["remove", "rewrite", "saferWording"]
+                            }
+                        },
+                        required: ["issue", "platform", "riskArea", "actionableFix"]
+                    }
+                },
+                rewrittenVersions: {
+                    type: "OBJECT",
+                    description: "Compliant rewritten versions of the content.",
+                    properties: {
+                        safeCaption: { type: "STRING", description: "A safe, general rewritten caption." },
+                        adCopyCompliant: { type: "STRING", description: "A safe ad copy compliant with stricter rules." },
+                        visualSuggestion: { type: "STRING", description: "Safer thumbnail/visual suggestions." },
+                        facebookVersion: { type: "STRING", description: "Rewritten version optimized for Facebook." },
+                        tiktokVersion: { type: "STRING", description: "Rewritten version optimized for TikTok." },
+                        youtubeVersion: { type: "STRING", description: "Rewritten version optimized for YouTube." },
+                        highlightedOriginalCaption: {
+                            type: "STRING", 
+                            description: "The original caption with all violating phrases clearly wrapped in double curly braces, like this: 'We guarantee {{100% success}} on your investment, making you {{rich instantly}}.' This is crucial for visual highlighting."
+                        },
+                        originalToneCompliantVersion: {
+                            type: "STRING", 
+                            description: "A fully compliant version that preserves the original author's tone, style, and core message."
+                        }
+                    },
+                    required: ["safeCaption", "adCopyCompliant", "visualSuggestion", "facebookVersion", "tiktokVersion", "youtubeVersion", "highlightedOriginalCaption", "originalToneCompliantVersion"]
+                }
+            },
+            required: ["classification", "platformSummary", "violations", "rewrittenVersions"]
+        };
+
+        const SYSTEM_INSTRUCTION = `You are a world-class, multi-platform content compliance auditor. Your goal is to analyze the provided content (visual description and caption) for violation risks across Facebook, TikTok, and YouTube policies (Community Guidelines, Ad Policy, Brand Safety, Copyright, Misleading/False Claims, Adult/Suggestive, Political/Hate/Unsafe Content).
+
+        // Policy Notes:
+        // Facebook Policy Note: Explicitly use the Meta Community Standards (https://transparency.meta.com/policies/community-standards/), the Violent and Graphic Content policy (https://transparency.meta.com/policies/community-standards/violent-graphic-content/), the Misinformation policy (https://transparency.meta.com/policies/community-standards/misinformation/), and the Commerce Product Feed policy (https://www.facebook.com/business/help/201148151829614?id=208060977200861) as primary references for Facebook compliance checks.
+        // TikTok Policy Note: Explicitly use the TikTok Content Violations and Bans policy (https://support.tiktok.com/en/safety-hc/account-and-user-safety/content-violations-and-bans) as a primary reference for TikTok compliance checks.
+
+        // Instruction for language control
+        The content for sections 1 and 2 (classification and platform summary) MUST be in clear, professional English.
+
+        The content for sections 3 and 4 (detailed violation breakdown and all rewritten versions) MUST be provided in a friendly, conversational, and natural style Burmese (Myanmar Language).
+        
+        CRUCIAL BURMESE TONE INSTRUCTIONS (for Sections 3 and 4 content):
+        1. Use the highly polite term 'လူကြီးမင်း' instead of 'သင်' or similar second-person pronouns.
+        2. Strictly avoid using the particle 'သည်' at the end of sentences; use alternative polite closers to ensure a natural and polished tone.
+        3. Use 'ကျွန်တော်တို့' instead of 'ကျွန်ုပ်တို့၏' when referring to the tool's suggestions or capabilities, maintaining a personal and approachable tone.
+        4. Output formatting for all text in Sections 3 and 4 MUST be plain text. Do NOT use any markdown formatting like ** or \n\n. The text should be immediately usable.
+        5. All items in the rewritten versions (Section 4) MUST be presented as a simple numbered list (1., 2., 3., etc.). Do NOT include any prefix or suffix beyond the number and period.
+        6. Do NOT use stylized or Unicode creative fonts. Ensure correct, standard Burmese script and grammar are used.
+        7. For the 'originalToneCompliantVersion', ensure the core message and original style/tone of the input caption are maintained as closely as possible while strictly removing all policy violations. The output MUST be structured as multiple, distinct paragraphs (including the headline, body content, and CTA) where **each section is visually separated by double newlines (\n\n)**. The entire output must contain **no labels** (like 'ခေါင်းစီး:', 'စာပိုဒ်:', or 'လုပ်ဆောင်ချက်:'). The first line must serve as the main headline/hook. Strictly enforce Burmese grammar and word choice: replace the sentence-ending particle 'သည်' with 'တယ်' in all generated Burmese text. The use of relevant emojis to enhance the visual appeal is encouraged.
+        8. For the 'visualSuggestion' (ပုံအတွက် အကြံပြုချက်), the content MUST be generated entirely in a friendly, conversational Burmese tone, avoiding English technical terms and explaining the visual concepts clearly in Burmese.
+
+        You MUST provide the analysis in the specified JSON format.
+
+        ANALYSIS STEPS:
+        1. Classify the content type and confirm the intent (Ad/Organic).
+        2. Assign a Risk Level (Low/Medium/High) and a Risk Score (0-100) for each platform based on the severity and number of potential violations.
+        3. Identify and list every specific violation (e.g., 'Before–After promise', 'Financial income claim').
+        4. Provide highly actionable fixes for each violation.
+        5. Generate fully safe, compliant rewritten versions of the caption/copy tailored for general use, ad campaigns, and each specific platform (Facebook, TikTok, YouTube).
+
+        Pay special attention to financial claims, health/beauty promises, guaranteed results, and misleading language, as these are universally restricted.`;
+
+
+        function getRiskClass(level) {
+            switch (level) {
+                case 'Low': return 'risk-low';
+                case 'Medium': return 'risk-medium';
+                case 'High': return 'risk-high';
+                default: return 'risk-low';
+            }
+        }
+
+        function renderRiskIcon(level) {
+            switch (level) {
+                case 'Low': return '✅';
+                case 'Medium': return '⚠️';
+                case 'High': return '🚫';
+                default: return '❓';
+            }
+        }
+
+        function copyToClipboard(text) {
+            // English strings for UI feedback
+            const successText = 'Copied to clipboard.';
+            const failText = 'Failed to copy. Please copy manually.';
+
+            // Use document.execCommand('copy') for better compatibility in iframe environments
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            
+            try {
+                document.execCommand('copy');
+                // Use a custom message box instead of alert()
+                showCustomMessage(successText, 'success');
+            } catch (err) {
+                console.error('Could not copy text: ', err);
+                showCustomMessage(failText, 'error');
+            }
+            document.body.removeChild(tempInput);
+        }
+
+        // Custom Message Box (replacing alert/confirm)
+        function showCustomMessage(message, type = 'info') {
+            const container = document.getElementById('custom-message-container') || createMessageContainer();
+            const messageElement = document.createElement('div');
+            
+            let bgColor, textColor;
+            if (type === 'success') {
+                bgColor = 'bg-green-600';
+                textColor = 'text-white';
+            } else if (type === 'error') {
+                bgColor = 'bg-red-600';
+                textColor = 'text-white';
+            } else {
+                bgColor = 'bg-gray-200';
+                textColor = 'text-gray-900';
+            }
+
+            messageElement.className = `p-3 mb-2 rounded-lg shadow-xl ${bgColor} ${textColor} text-sm font-semibold transition-opacity duration-300 opacity-0`;
+            messageElement.textContent = message;
+            
+            container.appendChild(messageElement);
+            setTimeout(() => messageElement.classList.remove('opacity-0'), 10);
+            
+            setTimeout(() => {
+                messageElement.classList.add('opacity-0');
+                messageElement.addEventListener('transitionend', () => messageElement.remove());
+            }, 3000);
+        }
+
+        function createMessageContainer() {
+            const container = document.createElement('div');
+            container.id = 'custom-message-container';
+            container.className = 'fixed top-4 right-4 z-50 w-full max-w-sm';
+            document.body.appendChild(container);
+            return container;
+        }
+
+
+        // Mapping for Section 4 titles (in Burmese)
+        const REWRITTEN_TITLES = {
+            safeCaption: 'ဘေးကင်းသော ယေဘုယျ စာတန်း',
+            adCopyCompliant: 'ကြော်ငြာအတွက် လိုက်နာမှုရှိသော မိတ္တူ (အတင်းကြပ်ဆုံး)',
+            visualSuggestion: 'ပုံအတွက် အကြံပြုချက်', // UPDATED
+            facebookVersion: 'Facebook အတွက် အသင့်တော်ဆုံး ပြန်လည်ရေးသားထားသော',
+            tiktokVersion: 'TikTok အတွက် အသင့်တော်ဆုံး ပြန်လည်ရေးသားထားသော',
+            youtubeVersion: 'YouTube အတွက် အသင့်တော်ဆုံး ပြန်လည်ရေးသားထားသော',
+            originalToneCompliantVersion: 'ပြန်ပြင်ရေးထားတဲ့ Content', // UPDATED
+        };
+
+        function renderResults(data, selectedPlatforms) {
+            RESULTS_OUTPUT.innerHTML = '';
+            RESULTS_OUTPUT.classList.remove('hidden');
+
+            // --- 1. Content Classification (Always rendered) ---
+            const classificationHtml = `
+                <div class="p-6 card-bg rounded-xl shadow-lg border border-gray-700">
+                    <h3 class="text-xl font-semibold text-primary mb-4">1. Content Classification</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <p class="font-medium text-secondary">Type: <span class="font-normal text-primary">${data.classification.contentType}</span></p>
+                        <p class="font-medium text-secondary">Intent: <span class="font-normal text-primary">${data.classification.intent}</span></p>
+                    </div>
+                </div>
+            `;
+
+            // --- 2. Platform Violation Summary (Filtered by selection) ---
+            const platformSummaryHtml = `
+                <div class="p-6 card-bg rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold text-primary mb-4">2. Platform Violation Summary</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        ${Object.keys(data.platformSummary).filter(p => selectedPlatforms.includes(p)).map(platformKey => {
+                            const platform = data.platformSummary[platformKey];
+                            const riskClass = getRiskClass(platform.riskLevel);
+                            const icon = renderRiskIcon(platform.riskLevel);
+                            const platformDisplayName = platformKey.charAt(0).toUpperCase() + platformKey.slice(1);
+                            return `
+                                <div class="platform-card p-4 rounded-lg shadow-md ${riskClass}">
+                                    <p class="font-bold text-lg mb-1 flex items-center">${platformDisplayName} <span class="ml-2">${icon}</span></p>
+                                    <p class="text-sm font-semibold">Risk Level: ${platform.riskLevel}</p>
+                                    <p class="text-sm">Risk Score: <span class="font-bold">${platform.riskScore}/100</span></p>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+            
+            // --- Original Content Analysis with Highlights ---
+            const highlightedCaptionHtml = `
+                <div class="p-6 card-bg rounded-xl shadow-lg border border-red-900">
+                    <h3 class="text-xl font-semibold text-primary mb-4">Original Input Analysis (Violation Highlights)</h3>
+                    <!-- Changed class to violation-highlight-box -->
+                    <div class="violation-highlight-box text-secondary">
+                        ${processHighlightedCaption(data.rewrittenVersions.highlightedOriginalCaption)}
+                    </div>
+                    <p class="mt-4 text-sm text-red-400">Violating phrases are highlighted in red for easy identification.</p>
+                </div>
+            `;
+
+            // --- 3. Detailed Violation Breakdown & Fixes (Only violations relevant to selected platforms, in Burmese) ---
+            const filteredViolations = data.violations.filter(v => {
+                // Check if any selected platform is in the violation's 'platform' string
+                return selectedPlatforms.some(p => v.platform.toLowerCase().includes(p));
+            });
+
+            const violationsHtml = `
+                <div class="p-6 card-bg rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold text-primary mb-4">3. Detailed Violation Breakdown & Fixes</h3>
+                    ${filteredViolations.length === 0 ? `<p class="text-gray-500 italic">No apparent policy violations found for the selected platform(s): ${selectedPlatforms.join(', ').toUpperCase()}.</p>` : filteredViolations.map((v, index) => `
+                        <div class="border-b border-gray-700 pb-4 mb-4 ${index === filteredViolations.length - 1 ? 'border-b-0' : ''}">
+                            <div class="font-bold text-red-400 mb-2 flex items-center">
+                                🚨 ${v.issue}
+                                <span class="ml-4 px-2 py-0.5 text-xs font-medium bg-red-900 text-red-400 rounded-full">${v.riskArea}</span>
+                            </div>
+                            <p class="text-sm text-secondary mb-2">
+                                <span class="font-medium text-primary">သက်ဆိုင်ရာ ပလက်ဖောင်းများ:</span> ${v.platform}
+                            </p>
+                            <div class="space-y-2 text-sm ml-4 border-l-2 border-gray-700 pl-3">
+                                <p><span class="font-semibold text-red-400">ဆောင်ရွက်ရန် - ဖယ်ရှားပါ:</span> ${v.actionableFix.remove}</p>
+                                <p><span class="font-semibold text-yellow-400">ဆောင်ရွက်ရန် - ပြန်လည်ရေးသားပါ:</span> ${v.actionableFix.rewrite}</p>
+                                <p><span class="font-semibold text-green-400">ပိုမိုဘေးကင်းသော စကားလုံး:</span> ${v.actionableFix.saferWording}</p>
+                                ${v.actionableFix.saferVisuals ? `<p><span class="font-semibold text-blue-400">ပိုမိုဘေးကင်းသော ရုပ်ပုံ အကြံပြုချက်:</span> ${v.actionableFix.saferVisuals}</p>` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            // --- 4. Fully Safe Rewritten Version (Filtered by selection, in Burmese) ---
+            const rewrittenKeys = Object.keys(data.rewrittenVersions).filter(key => {
+                // 1. Explicitly exclude the fields requested for removal
+                if (key === 'safeCaption' || key === 'adCopyCompliant' || key === 'facebookVersion') {
+                    return false;
+                }
+                
+                // 2. Exclude the technical highlighting field
+                if (key === 'highlightedOriginalCaption') {
+                    return false;
+                }
+
+                // 3. Include the remaining general/universal fields
+                if (key === 'visualSuggestion' || key === 'originalToneCompliantVersion') {
+                    return true;
+                }
+
+                // 4. Include platform-specific versions if the platform is selected
+                if (key === 'tiktokVersion') {
+                    return selectedPlatforms.includes('tiktok');
+                }
+                if (key === 'youtubeVersion') {
+                    return selectedPlatforms.includes('youtube');
+                }
+                
+                return false;
+            });
+
+            const rewrittenHtml = `
+                <div class="p-6 card-bg rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold text-primary mb-4">4. Fully Safe Rewritten Versions</h3> 
+                    <div class="space-y-4">
+                        ${rewrittenKeys.map((key) => {
+                            const title = REWRITTEN_TITLES[key] || key;
+                            const content = data.rewrittenVersions[key];
+
+                            // Determine title color based on user request (text-primary for Visual and Original Tone)
+                            const titleColorClass = (key === 'visualSuggestion' || key === 'originalToneCompliantVersion') 
+                                ? 'text-primary' 
+                                : 'text-secondary'; // Default color for others (TikTok/YouTube versions)
+
+                            // FIX: Use JSON.stringify for robust escaping and wrap onclick in single quotes
+                            const escapedContentForJS = JSON.stringify(content);
+
+                            return `
+                                <div class="border border-gray-700 p-4 rounded-lg bg-gray-900">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h4 class="font-semibold ${titleColorClass}">${title}</h4>
+                                        <button class="text-primary hover:text-amber-500 text-xs font-medium" onclick='copyToClipboard(${escapedContentForJS})'>Copy</button>
+                                    </div>
+                                    <!-- Use whitespace-pre-wrap to maintain the API's formatting for paragraphs separated by \n\n -->
+                                    <p class="text-sm text-gray-300 whitespace-pre-wrap">${content}</p>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+            
+            // --- Check Again Button ---
+            const checkAgainButton = `
+                <div class="mt-8 pt-4 border-t border-gray-700">
+                    <button id="check-again-button" onclick="checkAgain()" class="w-full py-3 px-4 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition duration-150 shadow-lg">
+                        Modify & Check Again
+                    </button>
+                </div>
+            `;
+
+            RESULTS_OUTPUT.innerHTML = classificationHtml + platformSummaryHtml + highlightedCaptionHtml + violationsHtml + rewrittenHtml + checkAgainButton;
+        }
+
+        function checkAgain() {
+            RESULTS_OUTPUT.innerHTML = ''; // Added this line to explicitly clear the previous report content
+            RESULTS_OUTPUT.classList.add('hidden');
+            ERROR_MESSAGE.classList.add('hidden');
+            // Scroll smoothly back to the input form
+            document.getElementById('input-form').scrollIntoView({ behavior: 'smooth' });
+        }
+
+
+        async function analyzeContent() {
+            const visualDescription = VISUAL_DESCRIPTION.value.trim();
+            const caption = CAPTION.value.trim();
+            const contentType = CONTENT_TYPE.value.trim();
+            // Intent hardcoded to 'Ad/Paid' since the UI element was removed
+            const intent = 'Ad/Paid'; 
+            
+            // Get selected platforms
+            const selectedPlatforms = Array.from(PLATFORM_SELECTION.querySelectorAll('input[name="platform"]:checked'))
+                .map(cb => cb.value.toLowerCase());
+            
+            // Validation: Check if any platforms are selected
+            if (selectedPlatforms.length === 0) {
+                ERROR_MESSAGE.textContent = 'Please select at least one Platform (Facebook, TikTok, or YouTube) to proceed with the compliance check.';
+                ERROR_MESSAGE.classList.remove('hidden');
+                RESULTS_OUTPUT.classList.add('hidden');
+                return;
+            }
+
+            // Get Data Feeds from the arrays
+            // Filter out default links to avoid sending massive policy documents, unless we need them for grounding
+            // For grounding, we include all links. The system prompt will handle their relevance.
+            const facebookLinks = facebookLinksArray.join('\n'); 
+            const tiktokDataFeed = tiktokLinksArray.join('\n'); 
+
+            // Validation: Check content
+            if (!visualDescription && !caption && facebookLinksArray.length === defaultFacebookLinks.length && tiktokLinksArray.length === defaultTiktokLinks.length) { 
+                ERROR_MESSAGE.textContent = 'Please enter content in the Caption, Visual Description, or add custom Links/Data Feed item to start the analysis.';
+                ERROR_MESSAGE.classList.remove('hidden');
+                RESULTS_OUTPUT.classList.add('hidden');
+                return;
+            }
+            
+            const finalContentType = contentType || 'Not Specified';
+
+            ERROR_MESSAGE.classList.add('hidden');
+            RESULTS_OUTPUT.classList.add('hidden');
+            ANALYZE_BUTTON.disabled = true;
+            BUTTON_TEXT.textContent = 'Analyzing...';
+            LOADING_SPINNER.classList.remove('hidden');
+
+            const userQuery = `
+                Content Audit Request (Output analysis content in English):
+                1. PLATFORMS TO FOCUS: ${selectedPlatforms.join(', ').toUpperCase()}
+                2. CONTENT TYPE: ${finalContentType}
+                3. INTENT: ${intent}
+                4. VISUAL/MEDIA DESCRIPTION: ${visualDescription || '[No visual description provided]'}
+                5. CAPTION/COPY: ${caption || '[No caption provided]'}
+                
+                SPECIAL INSTRUCTION: In the JSON output's 'highlightedOriginalCaption' field, return the exact original caption text. Identify all words, phrases, or sentences that trigger a policy violation and wrap them precisely in double curly braces (e.g., {{violating phrase}}). This is crucial for visual highlighting on the user interface.
+                
+                6. FACEBOOK DATA FEED (Can contain multiple links/URLs, one per line, for checking landing page/product compliance): ${facebookLinks || '[No links/data provided]'}
+                7. TIKTOK DATA FEED (for structured data compliance, especially if 'tiktok' is selected): ${tiktokDataFeed || '[No structured data provided]'}
+            `;
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: JSON_SCHEMA
+                }
+            };
+
+            try {
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                let jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (!jsonText) {
+                    throw new Error("API did not return structured JSON content.");
+                }
+
+                // Clean the JSON text (sometimes it includes markdown triple backticks)
+                jsonText = jsonText.replace(/^```json\s*|s*```$/g, '').trim();
+
+                const parsedData = JSON.parse(jsonText);
+                // Pass the selected platforms to the rendering function
+                renderResults(parsedData, selectedPlatforms);
+
+            } catch (error) {
+                console.error('Compliance Analysis Error:', error);
+                // English error message
+                ERROR_MESSAGE.textContent = `Analysis failed: ${error.message}. Please try again or refine your input.`;
+                ERROR_MESSAGE.classList.remove('hidden');
+                RESULTS_OUTPUT.innerHTML = '';
+            } finally {
+                ANALYZE_BUTTON.disabled = false;
+                BUTTON_TEXT.textContent = 'Check Now';
+                LOADING_SPINNER.classList.add('hidden');
+            }
+        }
+
+        // Attach listeners when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Firebase for link persistence
+            initializeFirebase(); 
+            
+            // Explicit button click listener: Check Now
+            ANALYZE_BUTTON.addEventListener('click', analyzeContent);
+            
+            // Listeners for link/data input
+            FACEBOOK_LINK_INPUT.addEventListener('keypress', addLink);
+            TIKTOK_LINK_INPUT.addEventListener('keypress', addTikTokLink);
+            
+            // Expose globally for event handlers in dynamically generated HTML
+            window.copyToClipboard = copyToClipboard;
+            window.analyzeContent = analyzeContent;
+            window.showCustomMessage = showCustomMessage;
+            window.checkAgain = checkAgain; // Exposed the new function
+        });
+
+    </script>
+</body>
+</html>
