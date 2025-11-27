@@ -796,14 +796,14 @@
                                 ? 'text-primary' 
                                 : 'text-secondary'; // Default color for others (TikTok/YouTube versions)
 
-                            // FIX: Use JSON.stringify for robust escaping and wrap onclick in single quotes
+                            // FIX: Use JSON.stringify for robust escaping and use template literal (backticks) for onclick
                             const escapedContentForJS = JSON.stringify(content);
 
                             return `
                                 <div class="border border-gray-700 p-4 rounded-lg bg-gray-900">
                                     <div class="flex justify-between items-center mb-2">
                                         <h4 class="font-semibold ${titleColorClass}">${title}</h4>
-                                        <button class="text-primary hover:text-amber-500 text-xs font-medium" onclick='copyToClipboard(${escapedContentForJS})'>Copy</button>
+                                        <button class="text-primary hover:text-amber-500 text-xs font-medium" onclick="\`copyToClipboard(\${${escapedContentForJS}})\`">Copy</button>
                                     </div>
                                     <!-- Use whitespace-pre-wrap to maintain the API's formatting for paragraphs separated by \n\n -->
                                     <p class="text-sm text-gray-300 whitespace-pre-wrap">${content}</p>
@@ -874,7 +874,7 @@
             RESULTS_OUTPUT.classList.add('hidden');
             ANALYZE_BUTTON.disabled = true;
             BUTTON_TEXT.textContent = 'Analyzing...';
-            LOADING_SPINNER.classList.remove('hidden');
+            LOADING_SPINNER.classList.add('hidden'); // Ensure it's hidden before API call
 
             const userQuery = `
                 Content Audit Request (Output analysis content in English):
@@ -890,8 +890,12 @@
                 7. TIKTOK DATA FEED (for structured data compliance, especially if 'tiktok' is selected): ${tiktokDataFeed || '[No structured data provided]'}
             `;
 
-            // FIX: Changed to the standard gemini-2.5-flash model to resolve potential 403 authorization issues
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            // FIX: Reverting to gemini-2.5-flash-preview-09-2025 for reliable structured output processing, hoping it addresses the 403 authorization issue in this environment.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            // Add loading spinner visualization
+            LOADING_SPINNER.classList.remove('hidden');
+
 
             const payload = {
                 contents: [{ parts: [{ text: userQuery }] }],
