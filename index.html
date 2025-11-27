@@ -799,15 +799,15 @@
                                 ? 'text-primary' 
                                 : 'text-secondary'; // Default color for others (TikTok/YouTube versions)
 
-                            // FIX: URI encode the content for safe transmission via inline JS
+                            // URI encode the content for safe storage in data attribute
                             const uriEncodedContent = encodeURIComponent(content);
 
                             return `
                                 <div class="border border-gray-700 p-4 rounded-lg bg-gray-900">
                                     <div class="flex justify-between items-center mb-2">
                                         <h4 class="font-semibold ${titleColorClass}">${title}</h4>
-                                        <!-- Using double quotes for onclick, and single quotes for the URI encoded string argument -->
-                                        <button class="text-primary hover:text-amber-500 text-xs font-medium" onclick="copyToClipboard('${uriEncodedContent}')">Copy</button>
+                                        <!-- Changed to data-content-encoded and added class for delegation -->
+                                        <button class="copy-button text-primary hover:text-amber-500 text-xs font-medium" data-content-encoded="${uriEncodedContent}">Copy</button>
                                     </div>
                                     <!-- Use whitespace-pre-wrap to maintain the API's formatting for paragraphs separated by \n\n -->
                                     <p class="text-sm text-gray-300 whitespace-pre-wrap">${content}</p>
@@ -945,6 +945,20 @@
             }
         }
 
+        // --- Event Delegation for Copy Buttons ---
+        function setupCopyDelegation() {
+            RESULTS_OUTPUT.addEventListener('click', (event) => {
+                const button = event.target.closest('.copy-button');
+                if (button) {
+                    const encodedText = button.getAttribute('data-content-encoded');
+                    if (encodedText) {
+                        copyToClipboard(encodedText);
+                    }
+                }
+            });
+        }
+
+
         // Attach listeners when the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize Firebase for link persistence
@@ -952,6 +966,9 @@
             
             // Explicit button click listener: Check Now
             ANALYZE_BUTTON.addEventListener('click', analyzeContent);
+            
+            // Setup Copy Delegation
+            setupCopyDelegation();
             
             // Listeners for link/data input
             FACEBOOK_LINK_INPUT.addEventListener('keypress', addLink);
