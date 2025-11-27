@@ -796,14 +796,18 @@
                                 ? 'text-primary' 
                                 : 'text-secondary'; // Default color for others (TikTok/YouTube versions)
 
-                            // FIX: Use JSON.stringify for robust escaping and use template literal (backticks) for onclick
-                            const escapedContentForJS = JSON.stringify(content);
+                            // FIX: Manual string escaping for maximum compatibility
+                            const manualEscapedContent = content
+                                .replace(/\\/g, '\\\\') // Escape existing backslashes
+                                .replace(/'/g, '\\\'') // Escape single quotes (since we use single quotes for the argument string)
+                                .replace(/\n/g, '\\n'); // Escape newlines (essential for inline JS)
 
                             return `
                                 <div class="border border-gray-700 p-4 rounded-lg bg-gray-900">
                                     <div class="flex justify-between items-center mb-2">
                                         <h4 class="font-semibold ${titleColorClass}">${title}</h4>
-                                        <button class="text-primary hover:text-amber-500 text-xs font-medium" onclick="\`copyToClipboard(\${${escapedContentForJS}})\`">Copy</button>
+                                        <!-- Using double quotes for onclick, and single quotes for the string argument, which is now manually escaped -->
+                                        <button class="text-primary hover:text-amber-500 text-xs font-medium" onclick="copyToClipboard('${manualEscapedContent}')">Copy</button>
                                     </div>
                                     <!-- Use whitespace-pre-wrap to maintain the API's formatting for paragraphs separated by \n\n -->
                                     <p class="text-sm text-gray-300 whitespace-pre-wrap">${content}</p>
